@@ -539,3 +539,109 @@ body {
   color: #fff;
   border-color: #ef4444;
 }
+
+/* REAKCJE EMOJKI */
+.reactions-bar {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.reaction-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  color: var(--text-main);
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reaction-btn:hover {
+  background: rgba(251, 146, 60, 0.2);
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+
+/* KOMENTARZE */
+.comments-section {
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--card-border);
+}
+
+.comments-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.comment-item {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.comment-author {
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.comment-author.author-jasin { color: var(--jasin-color); }
+.comment-author.author-osin { color: var(--osin-color); }
+.comment-author.author-wrona { color: var(--wrona-color); }
+
+.comment-text {
+  color: var(--text-main);
+}
+
+.no-comments {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.comment-form {
+  display: flex;
+  gap: 6px;
+}
+
+.comment-author-select {
+  background-color: #0f172a;
+  color: var(--text-main);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 6px;
+  font-size: 12px;
+}
+
+.comment-input {
+  flex: 1;
+  background-color: #0f172a;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+}
+
+.comment-submit-btn {
+  background-color: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 0 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
