@@ -17,14 +17,14 @@
   <!-- Połączenie z Firebase (Baza Danych w Chmurze) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     // LINK DO TWOJEJ BAZY FIREBASE
     const firebaseConfig = {
       databaseURL: "https://dziennik-jow-default-rtdb.europe-west1.firebasedatabase.app/"
     };
 
-    // WAŻNE: TUTAJ USTAWIASZ WASZ TAJNY PIN
+    // TAJNY PIN
     const SECRET_PIN = "132027";
 
     // Inicjalizacja Firebase
@@ -65,7 +65,6 @@
       });
     });
 
-    // Obsługa Logowania
     function checkAuthStatus() {
       const isLogged = localStorage.getItem('jow_is_logged') === 'true';
       if (isLogged) {
@@ -138,7 +137,9 @@
         author: selectedAuthor,
         quote: quote,
         lesson: lesson,
-        rating: currentRating
+        rating: currentRating,
+        reactions: { '🔥': 0, '😂': 0, '💪': 0, '❤️': 0, '👍': 0 },
+        comments: []
       };
 
       push(entriesRef, newEntry);
@@ -153,6 +154,43 @@
         const itemRef = ref(db, `entries/${key}`);
         remove(itemRef);
       }
+    }
+
+    // DODAWANIE REAKCJI (EMOJKI)
+    window.addReaction = function(key, emoji) {
+      const entry = entries.find(e => e.firebaseKey === key);
+      if (!entry) return;
+
+      const currentReactions = entry.reactions || { '🔥': 0, '😂': 0, '💪': 0, '❤️': 0, '👍': 0 };
+      currentReactions[emoji] = (currentReactions[emoji] || 0) + 1;
+
+      const itemRef = ref(db, `entries/${key}`);
+      update(itemRef, { reactions: currentReactions });
+    }
+
+    // DODAWANIE KOMENTARZA
+    window.addComment = function(e, key) {
+      e.preventDefault();
+      const input = document.getElementById(`commentInput-${key}`);
+      const authorSelect = document.getElementById(`commentAuthor-${key}`);
+      const text = input.value.trim();
+      const author = authorSelect.value;
+
+      if (!text) return;
+
+      const entry = entries.find(e => e.firebaseKey === key);
+      if (!entry) return;
+
+      const comments = entry.comments || [];
+      comments.push({
+        author: author,
+        text: text,
+        date: new Date().toISOString()
+      });
+
+      const itemRef = ref(db, `entries/${key}`);
+      update(itemRef, { comments: comments });
+      input.value = '';
     }
 
     function updateStreak() {
@@ -245,6 +283,19 @@
           year: 'numeric'
         });
 
+        const reactions = item.reactions || { '🔥': 0, '😂': 0, '💪': 0, '❤️': 0, '👍': 0 };
+        const comments = item.comments || [];
+
+        let commentsHTML = '';
+        comments.forEach(c => {
+          commentsHTML += `
+            <div class="comment-item">
+              <span class="comment-author author-${c.author.toLowerCase()}">${c.author}:</span>
+              <span class="comment-text">${c.text}</span>
+            </div>
+          `;
+        });
+
         const entryCard = document.createElement('div');
         entryCard.className = `entry-card author-border-${item.author.toLowerCase()}`;
 
@@ -272,6 +323,33 @@
               <div class="lesson-title"><i class="fa-solid fa-lightbulb"></i> Nauka na przyszłość:</div>
               <p>${item.lesson}</p>
             </div>
+
+            <!-- SEKCJA REAKCJI -->
+            <div class="reactions-bar">
+              <button onclick="addReaction('${item.firebaseKey}', '🔥')" class="reaction-btn">🔥 ${reactions['🔥'] || 0}</button>
+              <button onclick="addReaction('${item.firebaseKey}', '😂')" class="reaction-btn">😂 ${reactions['😂'] || 0}</button>
+              <button onclick="addReaction('${item.firebaseKey}', '💪')" class="reaction-btn">💪 ${reactions['💪'] || 0}</button>
+              <button onclick="addReaction('${item.firebaseKey}', '❤️')" class="reaction-btn">❤️ ${reactions['❤️'] || 0}</button>
+              <button onclick="addReaction('${item.firebaseKey}', '👍')" class="reaction-btn">👍 ${reactions['👍'] || 0}</button>
+            </div>
+
+            <!-- SEKCJA KOMENTARZY -->
+            <div class="comments-section">
+              <div class="comments-title"><i class="fa-solid fa-comments"></i> Komentarze (${comments.length})</div>
+              <div class="comments-list">
+                ${commentsHTML || '<p class="no-comments">Brak komentarzy. Bądź pierwszy!</p>'}
+              </div>
+              <form onsubmit="addComment(event, '${item.firebaseKey}')" class="comment-form">
+                <select id="commentAuthor-${item.firebaseKey}" class="comment-author-select">
+                  <option value="Jasin">Jasin</option>
+                  <option value="Osin">Osin</option>
+                  <option value="Wrona">Wrona</option>
+                </select>
+                <input type="text" id="commentInput-${item.firebaseKey}" class="comment-input" placeholder="Napisz komentarz..." required>
+                <button type="submit" class="comment-submit-btn"><i class="fa-solid fa-paper-plane"></i></button>
+              </form>
+            </div>
+
           </div>
         `;
 
@@ -300,7 +378,7 @@
     </div>
   </div>
 
-  <!-- ZAWARTOŚĆ STRONY (ZABEZPIECZONA) -->
+  <!-- ZAWARTOŚĆ STRONY -->
   <div id="appContent" style="display: none;">
     <header class="main-header">
       <div class="container header-container">
