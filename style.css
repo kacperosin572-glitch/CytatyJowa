@@ -540,7 +540,7 @@ body {
   border-color: #ef4444;
 }
 
-/* REAKCJE EMOJKI */
+/* REAKCJE EMOJKI (LIMIT DO 3) */
 .reactions-bar {
   display: flex;
   gap: 8px;
@@ -552,11 +552,14 @@ body {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--card-border);
   color: var(--text-main);
-  padding: 5px 10px;
+  padding: 5px 12px;
   border-radius: 20px;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .reaction-btn:hover {
@@ -565,7 +568,18 @@ body {
   transform: scale(1.05);
 }
 
-/* KOMENTARZE */
+.reaction-btn.active {
+  background: rgba(251, 146, 60, 0.25);
+  border-color: var(--primary);
+  font-weight: bold;
+}
+
+.reaction-count {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* KOMENTARZE Z PRZYCISKIEM USUWANIA */
 .comments-section {
   margin-top: 15px;
   padding-top: 12px;
@@ -591,11 +605,18 @@ body {
   padding: 6px 10px;
   border-radius: 6px;
   font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comment-content {
+  display: flex;
+  gap: 6px;
 }
 
 .comment-author {
   font-weight: 700;
-  margin-right: 6px;
 }
 
 .comment-author.author-jasin { color: var(--jasin-color); }
@@ -604,6 +625,20 @@ body {
 
 .comment-text {
   color: var(--text-main);
+}
+
+.comment-delete-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 5px;
+  transition: color 0.2s;
+}
+
+.comment-delete-btn:hover {
+  color: #ef4444;
 }
 
 .no-comments {
