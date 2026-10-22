@@ -19,10 +19,13 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // TUTAJ WKLEISZ SWOJE DANE Z FIREBASE (KROK 2)
+    // LINK DO TWOJEJ BAZY FIREBASE
     const firebaseConfig = {
-  databaseURL: "https://dziennik-jow-default-rtdb.europe-west1.firebasedatabase.app/"
-};
+      databaseURL: "https://dziennik-jow-default-rtdb.europe-west1.firebasedatabase.app/"
+    };
+
+    // WAŻNE: TUTAJ USTAWIASZ WASZ TAJNY PIN
+    const SECRET_PIN = "132027";
 
     // Inicjalizacja Firebase
     const app = initializeApp(firebaseConfig);
@@ -33,15 +36,18 @@
     let selectedAuthor = 'Jasin';
     let entries = [];
 
-    // Po załadowaniu strony
+    // Sprawdzanie logowania po załadowaniu
     window.addEventListener('DOMContentLoaded', () => {
+      checkAuthStatus();
       initStars();
       initAuthorSelector();
 
+      document.getElementById('loginForm').addEventListener('submit', handleLogin);
+      document.getElementById('logoutBtn').addEventListener('click', handleLogout);
       document.getElementById('entryForm').addEventListener('submit', handleFormSubmit);
       document.getElementById('authorFilter').addEventListener('change', renderEntries);
 
-      // Nasłuchiwanie zmian w bazie danych w chmurze (na żywo!)
+      // Nasłuchiwanie zmian w bazie danych
       onValue(entriesRef, (snapshot) => {
         const data = snapshot.val();
         entries = [];
@@ -52,13 +58,45 @@
               ...data[key]
             });
           });
-          // Sortowanie od najnowszych
           entries.sort((a, b) => new Date(b.date) - new Date(a.date));
         }
         renderEntries();
         updateStreak();
       });
     });
+
+    // Obsługa Logowania
+    function checkAuthStatus() {
+      const isLogged = localStorage.getItem('jow_is_logged') === 'true';
+      if (isLogged) {
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('appContent').style.display = 'block';
+      } else {
+        document.getElementById('loginOverlay').style.display = 'flex';
+        document.getElementById('appContent').style.display = 'none';
+      }
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const pinInput = document.getElementById('pinInput').value.trim();
+      const errorMsg = document.getElementById('loginError');
+
+      if (pinInput === SECRET_PIN) {
+        localStorage.setItem('jow_is_logged', 'true');
+        errorMsg.style.display = 'none';
+        document.getElementById('pinInput').value = '';
+        checkAuthStatus();
+      } else {
+        errorMsg.style.display = 'block';
+        document.getElementById('pinInput').value = '';
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('jow_is_logged');
+      checkAuthStatus();
+    }
 
     function initStars() {
       const container = document.getElementById('starsContainer');
@@ -103,7 +141,6 @@
         rating: currentRating
       };
 
-      // Zapis do bazy danych w chmurze
       push(entriesRef, newEntry);
 
       document.getElementById('quoteInput').value = '';
@@ -245,98 +282,123 @@
 </head>
 <body>
 
-  <header class="main-header">
-    <div class="container header-container">
-      <div class="logo-area">
-        <div class="logo-icon"><i class="fa-solid fa-journal-whills"></i></div>
-        <div>
-          <h1 class="logo-title">Dziennik Jow</h1>
-          <p class="logo-subtitle">Jasin • Osin • Wrona</p>
-        </div>
+  <!-- EKRAN LOGOWANIA -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="card login-card">
+      <div class="login-header">
+        <i class="fa-solid fa-lock login-lock-icon"></i>
+        <h2>Dziennik Jow</h2>
+        <p>Wpisz kod PIN, aby uzyskać dostęp</p>
       </div>
-
-      <div class="streak-badge" id="streakBadge">
-        <div class="streak-icon" id="streakIcon">
-          <i class="fa-solid fa-fire"></i>
-        </div>
-        <div class="streak-info">
-          <div class="streak-count" id="streakCount">0 DNI</div>
-          <div class="streak-label" id="streakLabel">Brak aktywnej passy</div>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <main class="container main-layout">
-    <section class="card form-card">
-      <h2 class="section-title"><i class="fa-solid fa-pen-to-square"></i> Dodaj wpis z dzisiaj</h2>
-      
-      <form id="entryForm">
+      <form id="loginForm">
         <div class="form-group">
-          <label class="form-label">Kto dodaje wpis?</label>
-          <div class="author-selector">
-            <button type="button" class="author-btn active" data-author="Jasin">
-              <i class="fa-solid fa-user"></i> Jasin
-            </button>
-            <button type="button" class="author-btn" data-author="Osin">
-              <i class="fa-solid fa-user"></i> Osin
-            </button>
-            <button type="button" class="author-btn" data-author="Wrona">
-              <i class="fa-solid fa-user"></i> Wrona
-            </button>
-          </div>
+          <input type="password" id="pinInput" class="form-control pin-input" placeholder="Wpisz PIN..." maxlength="10" required>
         </div>
-
-        <div class="form-group">
-          <label for="quoteInput" class="form-label">Cytat z dzisiejszego dnia</label>
-          <input type="text" id="quoteInput" class="form-control" placeholder="Co ciekawe/śmiesznego dzisiaj padło?" required>
-        </div>
-
-        <div class="form-group">
-          <label for="lessonInput" class="form-label">Nauka / wniosek na przyszłość</label>
-          <textarea id="lessonInput" class="form-control" rows="3" placeholder="Czego się dzisiaj nauczyłeś lub co wyciągasz z tego dnia?" required></textarea>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Ocena dzisiejszego dnia (1 - 10)</label>
-          <div class="rating-box">
-            <div class="stars-container" id="starsContainer"></div>
-            <span class="rating-value" id="ratingValue">7 / 10</span>
-          </div>
-        </div>
-
-        <button type="submit" class="submit-btn">
-          <i class="fa-solid fa-plus-circle"></i> Zapisz wpis i zalicz dzień
-        </button>
+        <p id="loginError" class="login-error">Błędny kod PIN! Spróbuj ponownie.</p>
+        <button type="submit" class="submit-btn"><i class="fa-solid fa-key"></i> Zaloguj się</button>
       </form>
-    </section>
+    </div>
+  </div>
 
-    <section class="card history-card">
-      <div class="history-header">
-        <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Historia wpisów</h2>
-        <div class="filter-box">
-          <select id="authorFilter" class="filter-select">
-            <option value="ALL">Wszyscy autorzy</option>
-            <option value="Jasin">Tylko Jasin</option>
-            <option value="Osin">Tylko Osin</option>
-            <option value="Wrona">Tylko Wrona</option>
-          </select>
+  <!-- ZAWARTOŚĆ STRONY (ZABEZPIECZONA) -->
+  <div id="appContent" style="display: none;">
+    <header class="main-header">
+      <div class="container header-container">
+        <div class="logo-area">
+          <div class="logo-icon"><i class="fa-solid fa-journal-whills"></i></div>
+          <div>
+            <h1 class="logo-title">Dziennik Jow</h1>
+            <p class="logo-subtitle">Jasin • Osin • Wrona</p>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <div class="streak-badge" id="streakBadge">
+            <div class="streak-icon" id="streakIcon">
+              <i class="fa-solid fa-fire"></i>
+            </div>
+            <div class="streak-info">
+              <div class="streak-count" id="streakCount">0 DNI</div>
+              <div class="streak-label" id="streakLabel">Brak aktywnej passy</div>
+            </div>
+          </div>
+          <button id="logoutBtn" class="logout-btn" title="Wyloguj"><i class="fa-solid fa-right-from-bracket"></i></button>
         </div>
       </div>
+    </header>
 
-      <div class="stats-bar">
-        <div class="stat-item">
-          <span class="stat-label">Razem wpisów</span>
-          <span class="stat-val" id="totalEntries">0</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Średnia ocena dni</span>
-          <span class="stat-val" id="avgRating">0.0</span>
-        </div>
-      </div>
+    <main class="container main-layout">
+      <section class="card form-card">
+        <h2 class="section-title"><i class="fa-solid fa-pen-to-square"></i> Dodaj wpis z dzisiaj</h2>
+        
+        <form id="entryForm">
+          <div class="form-group">
+            <label class="form-label">Kto dodaje wpis?</label>
+            <div class="author-selector">
+              <button type="button" class="author-btn active" data-author="Jasin">
+                <i class="fa-solid fa-user"></i> Jasin
+              </button>
+              <button type="button" class="author-btn" data-author="Osin">
+                <i class="fa-solid fa-user"></i> Osin
+              </button>
+              <button type="button" class="author-btn" data-author="Wrona">
+                <i class="fa-solid fa-user"></i> Wrona
+              </button>
+            </div>
+          </div>
 
-      <div id="entriesList" class="entries-list"></div>
-    </section>
-  </main>
+          <div class="form-group">
+            <label for="quoteInput" class="form-label">Cytat z dzisiejszego dnia</label>
+            <input type="text" id="quoteInput" class="form-control" placeholder="Co ciekawe/śmiesznego dzisiaj padło?" required>
+          </div>
+
+          <div class="form-group">
+            <label for="lessonInput" class="form-label">Nauka / wniosek na przyszłość</label>
+            <textarea id="lessonInput" class="form-control" rows="3" placeholder="Czego się dzisiaj nauczyłeś lub co wyciągasz z tego dnia?" required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ocena dzisiejszego dnia (1 - 10)</label>
+            <div class="rating-box">
+              <div class="stars-container" id="starsContainer"></div>
+              <span class="rating-value" id="ratingValue">7 / 10</span>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn">
+            <i class="fa-solid fa-plus-circle"></i> Zapisz wpis i zalicz dzień
+          </button>
+        </form>
+      </section>
+
+      <section class="card history-card">
+        <div class="history-header">
+          <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Historia wpisów</h2>
+          <div class="filter-box">
+            <select id="authorFilter" class="filter-select">
+              <option value="ALL">Wszyscy autorzy</option>
+              <option value="Jasin">Tylko Jasin</option>
+              <option value="Osin">Tylko Osin</option>
+              <option value="Wrona">Tylko Wrona</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="stats-bar">
+          <div class="stat-item">
+            <span class="stat-label">Razem wpisów</span>
+            <span class="stat-val" id="totalEntries">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Średnia ocena dni</span>
+            <span class="stat-val" id="avgRating">0.0</span>
+          </div>
+        </div>
+
+        <div id="entriesList" class="entries-list"></div>
+      </section>
+    </main>
+  </div>
+
 </body>
 </html>
