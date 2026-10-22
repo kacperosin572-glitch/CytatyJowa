@@ -1,0 +1,463 @@
+/* ZMIENNE WIZUALNE */
+:root {
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  
+  --primary: #fb923c;
+  --primary-hover: #f97316;
+  
+  /* Kolory dla przyjaciół */
+  --jasin-color: #3b82f6;
+  --jasin-bg: rgba(59, 130, 246, 0.15);
+  
+  --osin-color: #10b981;
+  --osin-bg: rgba(16, 185, 129, 0.15);
+  
+  --wrona-color: #a855f7;
+  --wrona-bg: rgba(168, 85, 247, 0.15);
+}
+
+/* RESET I PODSTAWY */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  min-height: 100vh;
+  line-height: 1.5;
+  padding-bottom: 40px;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* NAGŁÓWEK */
+.main-header {
+  background-color: #182232;
+  border-bottom: 1px solid var(--card-border);
+  padding: 20px 0;
+  margin-bottom: 30px;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo-icon {
+  font-size: 28px;
+  color: var(--primary);
+  background: rgba(251, 146, 60, 0.15);
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.logo-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* BANER PASSA / STREAK */
+.streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  border-radius: 99px;
+  border: 1px solid var(--card-border);
+  background-color: var(--card-bg);
+  transition: all 0.3s ease;
+}
+
+.streak-badge.active {
+  background-color: rgba(249, 115, 22, 0.15);
+  border-color: #f97316;
+}
+
+.streak-badge.pending {
+  background-color: rgba(234, 179, 8, 0.15);
+  border-color: #eab308;
+}
+
+.streak-icon {
+  font-size: 22px;
+  color: #64748b;
+}
+
+.streak-badge.active .streak-icon {
+  color: #f97316;
+  animation: pulse 1.5s infinite alternate;
+}
+
+.streak-badge.pending .streak-icon {
+  color: #eab308;
+}
+
+.streak-count {
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.streak-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.15); }
+}
+
+/* UKŁAD STRONY */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 25px;
+}
+
+@media (min-width: 900px) {
+  .main-layout {
+    grid-template-columns: 420px 1fr;
+  }
+}
+
+/* KARTY */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title i {
+  color: var(--primary);
+}
+
+/* FORMULARZ */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.form-control {
+  width: 100%;
+  background-color: #0f172a;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-control:focus {
+  border-color: var(--primary);
+}
+
+/* WYBÓR AUTORA */
+.author-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.author-btn {
+  background-color: #0f172a;
+  border: 1px solid var(--card-border);
+  color: var(--text-muted);
+  padding: 10px 5px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.author-btn[data-author="Jasin"].active {
+  background-color: var(--jasin-bg);
+  color: var(--jasin-color);
+  border-color: var(--jasin-color);
+}
+
+.author-btn[data-author="Osin"].active {
+  background-color: var(--osin-bg);
+  color: var(--osin-color);
+  border-color: var(--osin-color);
+}
+
+.author-btn[data-author="Wrona"].active {
+  background-color: var(--wrona-bg);
+  color: var(--wrona-color);
+  border-color: var(--wrona-color);
+}
+
+/* OCENA GWIAZDKOWA */
+.rating-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #0f172a;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+}
+
+.stars-container {
+  display: flex;
+  gap: 4px;
+}
+
+.star-icon {
+  color: #f59e0b;
+  cursor: pointer;
+  font-size: 16px;
+  transition: transform 0.1s;
+}
+
+.star-icon.empty {
+  color: #475569;
+}
+
+.star-icon:hover {
+  transform: scale(1.2);
+}
+
+.rating-value {
+  font-weight: 700;
+  font-size: 14px;
+  color: #f59e0b;
+}
+
+/* PRZYCISK DODAWANIA */
+.submit-btn {
+  width: 100%;
+  background-color: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+  margin-top: 10px;
+}
+
+.submit-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+/* HISTORIA I PASEK STATYSTYK */
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.filter-select {
+  background-color: #0f172a;
+  color: var(--text-main);
+  border: 1px solid var(--card-border);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+}
+
+.stats-bar {
+  display: flex;
+  gap: 15px;
+  background-color: #0f172a;
+  padding: 12px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border: 1px solid var(--card-border);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.stat-val {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* LISTA WPISÓW */
+.entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.entry-card {
+  background-color: #0f172a;
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 4px solid var(--card-border);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.entry-card.author-border-jasin { border-left-color: var(--jasin-color); }
+.entry-card.author-border-osin { border-left-color: var(--osin-color); }
+.entry-card.author-border-wrona { border-left-color: var(--wrona-color); }
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge {
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badge.author-jasin { background-color: var(--jasin-bg); color: var(--jasin-color); }
+.badge.author-osin { background-color: var(--osin-bg); color: var(--osin-color); }
+.badge.author-wrona { background-color: var(--wrona-bg); color: var(--wrona-color); }
+
+.entry-date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.entry-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.entry-score {
+  font-weight: 700;
+  font-size: 13px;
+  color: #f59e0b;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.delete-btn:hover {
+  color: #ef4444;
+}
+
+.entry-quote {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.quote-icon {
+  color: var(--primary);
+  opacity: 0.6;
+}
+
+.entry-lesson {
+  background-color: rgba(255, 255, 255, 0.03);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.lesson-title {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text-muted);
+}
+
+.empty-state i {
+  font-size: 36px;
+  margin-bottom: 10px;
+  opacity: 0.4;
+}

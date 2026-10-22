@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dziennik Jow | Jasin, Osin, Wrona</title>
+  
+  <!-- Czcionka Inter & Ikony FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Plik ze stylami CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- NAGŁÓWEK -->
+  <header class="main-header">
+    <div class="container header-container">
+      <div class="logo-area">
+        <div class="logo-icon"><i class="fa-solid fa-journal-whills"></i></div>
+        <div>
+          <h1 class="logo-title">Dziennik Jow</h1>
+          <p class="logo-subtitle">Jasin • Osin • Wrona</p>
+        </div>
+      </div>
+
+      <!-- BANER STREAK (PASSA) -->
+      <div class="streak-badge" id="streakBadge">
+        <div class="streak-icon" id="streakIcon">
+          <i class="fa-solid fa-fire"></i>
+        </div>
+        <div class="streak-info">
+          <div class="streak-count" id="streakCount">0 DNI</div>
+          <div class="streak-label" id="streakLabel">Brak aktywnej passy</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- GŁÓWNA ZAWARTOŚĆ -->
+  <main class="container main-layout">
+    
+    <!-- SEKCJA FORMULARZA -->
+    <section class="card form-card">
+      <h2 class="section-title"><i class="fa-solid fa-pen-to-square"></i> Dodaj wpis z dzisiaj</h2>
+      
+      <form id="entryForm">
+        <!-- Wybór autora -->
+        <div class="form-group">
+          <label class="form-label">Kto dodaje wpis?</label>
+          <div class="author-selector">
+            <button type="button" class="author-btn active" data-author="Jasin">
+              <i class="fa-solid fa-user"></i> Jasin
+            </button>
+            <button type="button" class="author-btn" data-author="Osin">
+              <i class="fa-solid fa-user"></i> Osin
+            </button>
+            <button type="button" class="author-btn" data-author="Wrona">
+              <i class="fa-solid fa-user"></i> Wrona
+            </button>
+          </div>
+        </div>
+
+        <!-- Cytat dnia -->
+        <div class="form-group">
+          <label for="quoteInput" class="form-label">Cytat z dzisiejszego dnia</label>
+          <input type="text" id="quoteInput" class="form-control" placeholder="Co ciekawe/śmiesznego dzisiaj padło?" required>
+        </div>
+
+        <!-- Nauka na przyszłość -->
+        <div class="form-group">
+          <label for="lessonInput" class="form-label">Nauka / wniosek na przyszłość</label>
+          <textarea id="lessonInput" class="form-control" rows="3" placeholder="Czego się dzisiaj nauczyłeś lub co wyciągasz z tego dnia?" required></textarea>
+        </div>
+
+        <!-- Ocena dnia -->
+        <div class="form-group">
+          <label class="form-label">Ocena dzisiejszego dnia (1 - 10)</label>
+          <div class="rating-box">
+            <div class="stars-container" id="starsContainer">
+              <!-- Gwiazdki zostaną wygenerowane przez JS -->
+            </div>
+            <span class="rating-value" id="ratingValue">7 / 10</span>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn">
+          <i class="fa-solid fa-plus-circle"></i> Zapisz wpis i zalicz dzień
+        </button>
+      </form>
+    </section>
+
+    <!-- SEKCJA HISTORII I STATYSTYK -->
+    <section class="card history-card">
+      <div class="history-header">
+        <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Historia wpisów</h2>
+        
+        <!-- Filtrowanie po autorze -->
+        <div class="filter-box">
+          <select id="authorFilter" class="filter-select">
+            <option value="ALL">Wszyscy autorzy</option>
+            <option value="Jasin">Tylko Jasin</option>
+            <option value="Osin">Tylko Osin</option>
+            <option value="Wrona">Tylko Wrona</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Pasek krótkich statystyk -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-label">Razem wpisów</span>
+          <span class="stat-val" id="totalEntries">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Średnia ocena dni</span>
+          <span class="stat-val" id="avgRating">0.0</span>
+        </div>
+      </div>
+
+      <!-- Lista wpisów -->
+      <div id="entriesList" class="entries-list">
+        <!-- Wpisy ładowane dynamicznie z JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- SKRYPT LOGIKI -->
+  <script>
+    // Szybka inicjalizacja aplikacji
+    let currentRating = 7;
+    let selectedAuthor = 'Jasin';
+    let entries = JSON.parse(localStorage.getItem('jow_entries_v2')) || [];
+
+    // Po załadowaniu kodu
+    document.addEventListener('DOMContentLoaded', () => {
+      initStars();
+      initAuthorSelector();
+      renderEntries();
+      updateStreak();
+
+      document.getElementById('entryForm').addEventListener('submit', handleFormSubmit);
+      document.getElementById('authorFilter').addEventListener('change', renderEntries);
+    });
+
+    // Inicjalizacja gwiazdek oceny
+    function initStars() {
+      const container = document.getElementById('starsContainer');
+      container.innerHTML = '';
+      for (let i = 1; i <= 10; i++) {
+        const star = document.createElement('i');
+        star.className = i <= currentRating ? 'fa-solid fa-star star-icon' : 'fa-regular fa-star star-icon empty';
+        star.addEventListener('click', () => setRating(i));
+        container.appendChild(star);
+      }
+    }
+
+    function setRating(val) {
+      currentRating = val;
+      document.getElementById('ratingValue').innerText = `${val} / 10`;
+      initStars();
+    }
+
+    // Wybór autora
+    function initAuthorSelector() {
+      const btns = document.querySelectorAll('.author-btn');
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          btns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedAuthor = btn.getAttribute('data-author');
+        });
+      });
+    }
+
+    // Dodawanie wpisu
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const quote = document.getElementById('quoteInput').value.trim();
+      const lesson = document.getElementById('lessonInput').value.trim();
+
+      if (!quote || !lesson) return;
+
+      const newEntry = {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        author: selectedAuthor,
+        quote: quote,
+        lesson: lesson,
+        rating: currentRating
+      };
+
+      entries.unshift(newEntry);
+      localStorage.setItem('jow_entries_v2', JSON.stringify(entries));
+
+      // Reset formularza
+      document.getElementById('quoteInput').value = '';
+      document.getElementById('lessonInput').value = '';
+      setRating(7);
+
+      renderEntries();
+      updateStreak();
+    }
+
+    // Usuwanie wpisu
+    function deleteEntry(id) {
+      if (confirm('Czy na pewno chcesz usunąć ten wpis?')) {
+        entries = entries.filter(e => e.id !== id);
+        localStorage.setItem('jow_entries_v2', JSON.stringify(entries));
+        renderEntries();
+        updateStreak();
+      }
+    }
+
+    // Obliczanie Streaku (Passy Duolingo)
+    function updateStreak() {
+      const streakBadge = document.getElementById('streakBadge');
+      const streakCount = document.getElementById('streakCount');
+      const streakLabel = document.getElementById('streakLabel');
+
+      if (entries.length === 0) {
+        streakBadge.className = 'streak-badge inactive';
+        streakCount.innerText = '0 DNI';
+        streakLabel.innerText = 'Dodaj pierwszy wpis!';
+        return;
+      }
+
+      // Format YYYY-MM-DD
+      const dates = entries.map(e => {
+        const d = new Date(e.date);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      });
+
+      const uniqueDates = Array.from(new Set(dates)).sort().reverse();
+
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+      const hasToday = uniqueDates.includes(todayStr);
+      const hasYesterday = uniqueDates.includes(yesterdayStr);
+
+      let streak = 0;
+
+      if (hasToday || hasYesterday) {
+        let checkDate = hasToday ? new Date(today) : new Date(yesterday);
+        
+        while (true) {
+          const checkStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+          if (uniqueDates.includes(checkStr)) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+      }
+
+      streakCount.innerText = `${streak} ${streak === 1 ? 'DZIEŃ' : 'DNI'}`;
+
+      if (hasToday) {
+        streakBadge.className = 'streak-badge active';
+        streakLabel.innerText = 'Dziś passa zaliczona! 🔥';
+      } else if (streak > 0) {
+        streakBadge.className = 'streak-badge pending';
+        streakLabel.innerText = 'Utrzymaj passę dzisiaj!';
+      } else {
+        streakBadge.className = 'streak-badge inactive';
+        streakLabel.innerText = 'Passa wygasła. Zacznij dziś!';
+      }
+    }
+
+    // Wyświetlanie wpisów
+    function renderEntries() {
+      const filterValue = document.getElementById('authorFilter').value;
+      const filtered = filterValue === 'ALL' ? entries : entries.filter(e => e.author === filterValue);
+
+      // Statystyki
+      document.getElementById('totalEntries').innerText = entries.length;
+      if (entries.length > 0) {
+        const sum = entries.reduce((acc, curr) => acc + curr.rating, 0);
+        document.getElementById('avgRating').innerText = (sum / entries.length).toFixed(1);
+      } else {
+        document.getElementById('avgRating').innerText = '0.0';
+      }
+
+      const listContainer = document.getElementById('entriesList');
+      listContainer.innerHTML = '';
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-solid fa-box-open"></i>
+            <p>Brak wpisów w dzienniku.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const d = new Date(item.date);
+        const dateFormatted = d.toLocaleDateString('pl-PL', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+
+        const entryCard = document.createElement('div');
+        entryCard.className = `entry-card author-border-${item.author.toLowerCase()}`;
+
+        entryCard.innerHTML = `
+          <div class="entry-header">
+            <div class="entry-meta">
+              <span class="badge author-${item.author.toLowerCase()}">${item.author}</span>
+              <span class="entry-date"><i class="fa-regular fa-calendar"></i> ${dateFormatted}</span>
+            </div>
+            <div class="entry-actions">
+              <span class="entry-score"><i class="fa-solid fa-star"></i> ${item.rating}/10</span>
+              <button onclick="deleteEntry(${item.id})" class="delete-btn" title="Usuń wpis">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="entry-content">
+            <div class="entry-quote">
+              <i class="fa-solid fa-quote-left quote-icon"></i>
+              <span>"${item.quote}"</span>
+            </div>
+            
+            <div class="entry-lesson">
+              <div class="lesson-title"><i class="fa-solid fa-lightbulb"></i> Nauka na przyszłość:</div>
+              <p>${item.lesson}</p>
+            </div>
+          </div>
+        `;
+
+        listContainer.appendChild(entryCard);
+      });
+    }
+  </script>
+</body>
+</html>
