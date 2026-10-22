@@ -24,7 +24,7 @@
       databaseURL: "https://dziennik-jow-default-rtdb.europe-west1.firebasedatabase.app/"
     };
 
-    // TAJNY PIN
+    // TAJNY PIN DLA EKIPY
     const SECRET_PIN = "132027";
 
     // Inicjalizacja Firebase
@@ -138,7 +138,7 @@
         quote: quote,
         lesson: lesson,
         rating: currentRating,
-        reactions: { '🔥': 0, '😂': 0, '💪': 0, '❤️': 0, '👍': 0 },
+        reactions: {},
         comments: []
       };
 
@@ -156,16 +156,25 @@
       }
     }
 
-    // DODAWANIE REAKCJI (EMOJKI)
-    window.addReaction = function(key, emoji) {
+    // TOGGLE REAKCJI UNIKALNYCH DLA KAŻDEGO AUTORA
+    window.toggleReaction = function(key, emoji) {
       const entry = entries.find(e => e.firebaseKey === key);
       if (!entry) return;
 
-      const currentReactions = entry.reactions || { '🔥': 0, '😂': 0, '💪': 0, '❤️': 0, '👍': 0 };
-      currentReactions[emoji] = (currentReactions[emoji] || 0) + 1;
+      let reactions = entry.reactions || {};
+      if (!reactions[emoji]) {
+        reactions[emoji] = [];
+      }
+
+      const userIndex = reactions[emoji].indexOf(selectedAuthor);
+      if (userIndex > -1) {
+        reactions[emoji].splice(userIndex, 1);
+      } else {
+        reactions[emoji].push(selectedAuthor);
+      }
 
       const itemRef = ref(db, `entries/${key}`);
-      update(itemRef, { reactions: currentReactions });
+      update(itemRef, { reactions: reactions });
     }
 
     // DODAWANIE KOMENTARZA
@@ -183,6 +192,7 @@
 
       const comments = entry.comments || [];
       comments.push({
+        id: Date.now(),
         author: author,
         text: text,
         date: new Date().toISOString()
@@ -191,6 +201,18 @@
       const itemRef = ref(db, `entries/${key}`);
       update(itemRef, { comments: comments });
       input.value = '';
+    }
+
+    // USUWANIE KOMENTARZA
+    window.deleteComment = function(entryKey, commentId) {
+      const entry = entries.find(e => e.firebaseKey === entryKey);
+      if (!entry || !entry.comments) return;
+
+      if (confirm('Usunąć ten komentarz?')) {
+        const updatedComments = entry.comments.filter(c => c.id !== commentId);
+        const itemRef = ref(db, `entries/${entryKey}`);
+        update(itemRef, { comments: updatedComments });
+      }
     }
 
     function updateStreak() {
@@ -283,15 +305,36 @@
           year: 'numeric'
         });
 
-        const reactions = item.reactions || { '🔥': 0, '😂': 0, '💪': 0, '❤️': 0, '👍': 0 };
+        const reactions = item.reactions || {};
         const comments = item.comments || [];
+        const availableEmojis = ['🔥', '😂', '💪', '❤️', '👍'];
+
+        let reactionsHTML = '';
+        availableEmojis.forEach(emoji => {
+          const users = reactions[emoji] || [];
+          const count = users.length;
+          const isActive = users.includes(selectedAuthor);
+
+          reactionsHTML += `
+            <button onclick="toggleReaction('${item.firebaseKey}', '${emoji}')" 
+                    class="reaction-btn ${isActive ? 'active' : ''}" 
+                    title="${count > 0 ? 'Dali: ' + users.join(', ') : 'Dodaj reakcję'}">
+              ${emoji} <span class="reaction-count">${count}</span>
+            </button>
+          `;
+        });
 
         let commentsHTML = '';
         comments.forEach(c => {
           commentsHTML += `
             <div class="comment-item">
-              <span class="comment-author author-${c.author.toLowerCase()}">${c.author}:</span>
-              <span class="comment-text">${c.text}</span>
+              <div class="comment-content">
+                <span class="comment-author author-${c.author.toLowerCase()}">${c.author}:</span>
+                <span class="comment-text">${c.text}</span>
+              </div>
+              <button onclick="deleteComment('${item.firebaseKey}', ${c.id})" class="comment-delete-btn" title="Usuń komentarz">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
             </div>
           `;
         });
@@ -326,11 +369,7 @@
 
             <!-- SEKCJA REAKCJI -->
             <div class="reactions-bar">
-              <button onclick="addReaction('${item.firebaseKey}', '🔥')" class="reaction-btn">🔥 ${reactions['🔥'] || 0}</button>
-              <button onclick="addReaction('${item.firebaseKey}', '😂')" class="reaction-btn">😂 ${reactions['😂'] || 0}</button>
-              <button onclick="addReaction('${item.firebaseKey}', '💪')" class="reaction-btn">💪 ${reactions['💪'] || 0}</button>
-              <button onclick="addReaction('${item.firebaseKey}', '❤️')" class="reaction-btn">❤️ ${reactions['❤️'] || 0}</button>
-              <button onclick="addReaction('${item.firebaseKey}', '👍')" class="reaction-btn">👍 ${reactions['👍'] || 0}</button>
+              ${reactionsHTML}
             </div>
 
             <!-- SEKCJA KOMENTARZY -->
@@ -341,9 +380,9 @@
               </div>
               <form onsubmit="addComment(event, '${item.firebaseKey}')" class="comment-form">
                 <select id="commentAuthor-${item.firebaseKey}" class="comment-author-select">
-                  <option value="Jasin">Jasin</option>
-                  <option value="Osin">Osin</option>
-                  <option value="Wrona">Wrona</option>
+                  <option value="Jasin" ${selectedAuthor === 'Jasin' ? 'selected' : ''}>Jasin</option>
+                  <option value="Osin" ${selectedAuthor === 'Osin' ? 'selected' : ''}>Osin</option>
+                  <option value="Wrona" ${selectedAuthor === 'Wrona' ? 'selected' : ''}>Wrona</option>
                 </select>
                 <input type="text" id="commentInput-${item.firebaseKey}" class="comment-input" placeholder="Napisz komentarz..." required>
                 <button type="submit" class="comment-submit-btn"><i class="fa-solid fa-paper-plane"></i></button>
