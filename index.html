@@ -13,141 +13,53 @@
   
   <!-- Plik ze stylami CSS -->
   <link rel="stylesheet" href="style.css">
-</head>
-<body>
 
-  <!-- NAGŁÓWEK -->
-  <header class="main-header">
-    <div class="container header-container">
-      <div class="logo-area">
-        <div class="logo-icon"><i class="fa-solid fa-journal-whills"></i></div>
-        <div>
-          <h1 class="logo-title">Dziennik Jow</h1>
-          <p class="logo-subtitle">Jasin • Osin • Wrona</p>
-        </div>
-      </div>
+  <!-- Połączenie z Firebase (Baza Danych w Chmurze) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-      <!-- BANER STREAK (PASSA) -->
-      <div class="streak-badge" id="streakBadge">
-        <div class="streak-icon" id="streakIcon">
-          <i class="fa-solid fa-fire"></i>
-        </div>
-        <div class="streak-info">
-          <div class="streak-count" id="streakCount">0 DNI</div>
-          <div class="streak-label" id="streakLabel">Brak aktywnej passy</div>
-        </div>
-      </div>
-    </div>
-  </header>
+    // TUTAJ WKLEISZ SWOJE DANE Z FIREBASE (KROK 2)
+    const firebaseConfig = {
+  databaseURL: "https://dziennik-jow-default-rtdb.europe-west1.firebasedatabase.app/"
+};
 
-  <!-- GŁÓWNA ZAWARTOŚĆ -->
-  <main class="container main-layout">
-    
-    <!-- SEKCJA FORMULARZA -->
-    <section class="card form-card">
-      <h2 class="section-title"><i class="fa-solid fa-pen-to-square"></i> Dodaj wpis z dzisiaj</h2>
-      
-      <form id="entryForm">
-        <!-- Wybór autora -->
-        <div class="form-group">
-          <label class="form-label">Kto dodaje wpis?</label>
-          <div class="author-selector">
-            <button type="button" class="author-btn active" data-author="Jasin">
-              <i class="fa-solid fa-user"></i> Jasin
-            </button>
-            <button type="button" class="author-btn" data-author="Osin">
-              <i class="fa-solid fa-user"></i> Osin
-            </button>
-            <button type="button" class="author-btn" data-author="Wrona">
-              <i class="fa-solid fa-user"></i> Wrona
-            </button>
-          </div>
-        </div>
+    // Inicjalizacja Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const entriesRef = ref(db, 'entries');
 
-        <!-- Cytat dnia -->
-        <div class="form-group">
-          <label for="quoteInput" class="form-label">Cytat z dzisiejszego dnia</label>
-          <input type="text" id="quoteInput" class="form-control" placeholder="Co ciekawe/śmiesznego dzisiaj padło?" required>
-        </div>
-
-        <!-- Nauka na przyszłość -->
-        <div class="form-group">
-          <label for="lessonInput" class="form-label">Nauka / wniosek na przyszłość</label>
-          <textarea id="lessonInput" class="form-control" rows="3" placeholder="Czego się dzisiaj nauczyłeś lub co wyciągasz z tego dnia?" required></textarea>
-        </div>
-
-        <!-- Ocena dnia -->
-        <div class="form-group">
-          <label class="form-label">Ocena dzisiejszego dnia (1 - 10)</label>
-          <div class="rating-box">
-            <div class="stars-container" id="starsContainer">
-              <!-- Gwiazdki zostaną wygenerowane przez JS -->
-            </div>
-            <span class="rating-value" id="ratingValue">7 / 10</span>
-          </div>
-        </div>
-
-        <button type="submit" class="submit-btn">
-          <i class="fa-solid fa-plus-circle"></i> Zapisz wpis i zalicz dzień
-        </button>
-      </form>
-    </section>
-
-    <!-- SEKCJA HISTORII I STATYSTYK -->
-    <section class="card history-card">
-      <div class="history-header">
-        <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Historia wpisów</h2>
-        
-        <!-- Filtrowanie po autorze -->
-        <div class="filter-box">
-          <select id="authorFilter" class="filter-select">
-            <option value="ALL">Wszyscy autorzy</option>
-            <option value="Jasin">Tylko Jasin</option>
-            <option value="Osin">Tylko Osin</option>
-            <option value="Wrona">Tylko Wrona</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Pasek krótkich statystyk -->
-      <div class="stats-bar">
-        <div class="stat-item">
-          <span class="stat-label">Razem wpisów</span>
-          <span class="stat-val" id="totalEntries">0</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Średnia ocena dni</span>
-          <span class="stat-val" id="avgRating">0.0</span>
-        </div>
-      </div>
-
-      <!-- Lista wpisów -->
-      <div id="entriesList" class="entries-list">
-        <!-- Wpisy ładowane dynamicznie z JS -->
-      </div>
-    </section>
-
-  </main>
-
-  <!-- SKRYPT LOGIKI -->
-  <script>
-    // Szybka inicjalizacja aplikacji
     let currentRating = 7;
     let selectedAuthor = 'Jasin';
-    let entries = JSON.parse(localStorage.getItem('jow_entries_v2')) || [];
+    let entries = [];
 
-    // Po załadowaniu kodu
-    document.addEventListener('DOMContentLoaded', () => {
+    // Po załadowaniu strony
+    window.addEventListener('DOMContentLoaded', () => {
       initStars();
       initAuthorSelector();
-      renderEntries();
-      updateStreak();
 
       document.getElementById('entryForm').addEventListener('submit', handleFormSubmit);
       document.getElementById('authorFilter').addEventListener('change', renderEntries);
+
+      // Nasłuchiwanie zmian w bazie danych w chmurze (na żywo!)
+      onValue(entriesRef, (snapshot) => {
+        const data = snapshot.val();
+        entries = [];
+        if (data) {
+          Object.keys(data).forEach(key => {
+            entries.push({
+              firebaseKey: key,
+              ...data[key]
+            });
+          });
+          // Sortowanie od najnowszych
+          entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+        renderEntries();
+        updateStreak();
+      });
     });
 
-    // Inicjalizacja gwiazdek oceny
     function initStars() {
       const container = document.getElementById('starsContainer');
       container.innerHTML = '';
@@ -165,7 +77,6 @@
       initStars();
     }
 
-    // Wybór autora
     function initAuthorSelector() {
       const btns = document.querySelectorAll('.author-btn');
       btns.forEach(btn => {
@@ -177,7 +88,6 @@
       });
     }
 
-    // Dodawanie wpisu
     function handleFormSubmit(e) {
       e.preventDefault();
       const quote = document.getElementById('quoteInput').value.trim();
@@ -186,7 +96,6 @@
       if (!quote || !lesson) return;
 
       const newEntry = {
-        id: Date.now(),
         date: new Date().toISOString(),
         author: selectedAuthor,
         quote: quote,
@@ -194,29 +103,21 @@
         rating: currentRating
       };
 
-      entries.unshift(newEntry);
-      localStorage.setItem('jow_entries_v2', JSON.stringify(entries));
+      // Zapis do bazy danych w chmurze
+      push(entriesRef, newEntry);
 
-      // Reset formularza
       document.getElementById('quoteInput').value = '';
       document.getElementById('lessonInput').value = '';
       setRating(7);
-
-      renderEntries();
-      updateStreak();
     }
 
-    // Usuwanie wpisu
-    function deleteEntry(id) {
+    window.deleteEntry = function(key) {
       if (confirm('Czy na pewno chcesz usunąć ten wpis?')) {
-        entries = entries.filter(e => e.id !== id);
-        localStorage.setItem('jow_entries_v2', JSON.stringify(entries));
-        renderEntries();
-        updateStreak();
+        const itemRef = ref(db, `entries/${key}`);
+        remove(itemRef);
       }
     }
 
-    // Obliczanie Streaku (Passy Duolingo)
     function updateStreak() {
       const streakBadge = document.getElementById('streakBadge');
       const streakCount = document.getElementById('streakCount');
@@ -229,14 +130,12 @@
         return;
       }
 
-      // Format YYYY-MM-DD
       const dates = entries.map(e => {
         const d = new Date(e.date);
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       });
 
       const uniqueDates = Array.from(new Set(dates)).sort().reverse();
-
       const today = new Date();
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
@@ -251,7 +150,6 @@
 
       if (hasToday || hasYesterday) {
         let checkDate = hasToday ? new Date(today) : new Date(yesterday);
-        
         while (true) {
           const checkStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
           if (uniqueDates.includes(checkStr)) {
@@ -277,12 +175,10 @@
       }
     }
 
-    // Wyświetlanie wpisów
     function renderEntries() {
       const filterValue = document.getElementById('authorFilter').value;
       const filtered = filterValue === 'ALL' ? entries : entries.filter(e => e.author === filterValue);
 
-      // Statystyki
       document.getElementById('totalEntries').innerText = entries.length;
       if (entries.length > 0) {
         const sum = entries.reduce((acc, curr) => acc + curr.rating, 0);
@@ -323,7 +219,7 @@
             </div>
             <div class="entry-actions">
               <span class="entry-score"><i class="fa-solid fa-star"></i> ${item.rating}/10</span>
-              <button onclick="deleteEntry(${item.id})" class="delete-btn" title="Usuń wpis">
+              <button onclick="deleteEntry('${item.firebaseKey}')" class="delete-btn" title="Usuń wpis">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </div>
@@ -346,5 +242,101 @@
       });
     }
   </script>
+</head>
+<body>
+
+  <header class="main-header">
+    <div class="container header-container">
+      <div class="logo-area">
+        <div class="logo-icon"><i class="fa-solid fa-journal-whills"></i></div>
+        <div>
+          <h1 class="logo-title">Dziennik Jow</h1>
+          <p class="logo-subtitle">Jasin • Osin • Wrona</p>
+        </div>
+      </div>
+
+      <div class="streak-badge" id="streakBadge">
+        <div class="streak-icon" id="streakIcon">
+          <i class="fa-solid fa-fire"></i>
+        </div>
+        <div class="streak-info">
+          <div class="streak-count" id="streakCount">0 DNI</div>
+          <div class="streak-label" id="streakLabel">Brak aktywnej passy</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-layout">
+    <section class="card form-card">
+      <h2 class="section-title"><i class="fa-solid fa-pen-to-square"></i> Dodaj wpis z dzisiaj</h2>
+      
+      <form id="entryForm">
+        <div class="form-group">
+          <label class="form-label">Kto dodaje wpis?</label>
+          <div class="author-selector">
+            <button type="button" class="author-btn active" data-author="Jasin">
+              <i class="fa-solid fa-user"></i> Jasin
+            </button>
+            <button type="button" class="author-btn" data-author="Osin">
+              <i class="fa-solid fa-user"></i> Osin
+            </button>
+            <button type="button" class="author-btn" data-author="Wrona">
+              <i class="fa-solid fa-user"></i> Wrona
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="quoteInput" class="form-label">Cytat z dzisiejszego dnia</label>
+          <input type="text" id="quoteInput" class="form-control" placeholder="Co ciekawe/śmiesznego dzisiaj padło?" required>
+        </div>
+
+        <div class="form-group">
+          <label for="lessonInput" class="form-label">Nauka / wniosek na przyszłość</label>
+          <textarea id="lessonInput" class="form-control" rows="3" placeholder="Czego się dzisiaj nauczyłeś lub co wyciągasz z tego dnia?" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ocena dzisiejszego dnia (1 - 10)</label>
+          <div class="rating-box">
+            <div class="stars-container" id="starsContainer"></div>
+            <span class="rating-value" id="ratingValue">7 / 10</span>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn">
+          <i class="fa-solid fa-plus-circle"></i> Zapisz wpis i zalicz dzień
+        </button>
+      </form>
+    </section>
+
+    <section class="card history-card">
+      <div class="history-header">
+        <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Historia wpisów</h2>
+        <div class="filter-box">
+          <select id="authorFilter" class="filter-select">
+            <option value="ALL">Wszyscy autorzy</option>
+            <option value="Jasin">Tylko Jasin</option>
+            <option value="Osin">Tylko Osin</option>
+            <option value="Wrona">Tylko Wrona</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-label">Razem wpisów</span>
+          <span class="stat-val" id="totalEntries">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Średnia ocena dni</span>
+          <span class="stat-val" id="avgRating">0.0</span>
+        </div>
+      </div>
+
+      <div id="entriesList" class="entries-list"></div>
+    </section>
+  </main>
 </body>
 </html>
