@@ -203,23 +203,30 @@ body {
   border-color: var(--primary);
 }
 
-/* WYBÓR AUTORA */
-.author-selector {
+/* WYBÓR AUTORA & KATEGORII */
+.author-selector, .category-selector {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
-.author-btn {
+.author-btn, .category-btn {
   background-color: #0f172a;
   border: 1px solid var(--card-border);
   color: var(--text-muted);
   padding: 10px 5px;
   border-radius: 10px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
+  text-align: center;
+}
+
+.category-btn.active {
+  background-color: rgba(251, 146, 60, 0.15);
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 .author-btn[data-author="Jasin"].active {
@@ -310,6 +317,12 @@ body {
   margin-bottom: 15px;
 }
 
+.filter-box {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .filter-select {
   background-color: #0f172a;
   color: var(--text-main);
@@ -371,12 +384,15 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .entry-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .badge {
@@ -385,6 +401,16 @@ body {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.category-badge {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--card-border);
+  color: var(--primary);
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .badge.author-jasin { background-color: var(--jasin-bg); color: var(--jasin-color); }
@@ -540,7 +566,7 @@ body {
   border-color: #ef4444;
 }
 
-/* REAKCJE EMOJKI (LIMIT DO 3) */
+/* REAKCJE EMOJKI */
 .reactions-bar {
   display: flex;
   gap: 8px;
@@ -579,7 +605,7 @@ body {
   opacity: 0.8;
 }
 
-/* KOMENTARZE Z PRZYCISKIEM USUWANIA */
+/* KOMENTARZE */
 .comments-section {
   margin-top: 15px;
   padding-top: 12px;
@@ -679,4 +705,5 @@ body {
   padding: 0 12px;
   border-radius: 6px;
   cursor: pointer;
-}
+    }
+  
