@@ -14,20 +14,18 @@
   <!-- Plik ze stylami CSS -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- Połączenie z Firebase (Baza Danych w Chmurze) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // LINK DO TWOJEJ BAZY FIREBASE
+    // Adres Bazy Firebase
     const firebaseConfig = {
       databaseURL: "https://dziennik-jow-default-rtdb.europe-west1.firebasedatabase.app/"
     };
 
-    // TAJNY PIN DLA EKIPY
+    // Wasz Kod PIN
     const SECRET_PIN = "132027";
 
-    // Inicjalizacja Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const entriesRef = ref(db, 'entries');
@@ -37,20 +35,50 @@
     let selectedCategory = 'Cytaty';
     let entries = [];
 
-    // Sprawdzanie logowania po załadowaniu
+    // --- LOGIKA LOGOWANIA ---
+    window.checkAuth = function() {
+      const isLogged = localStorage.getItem('jow_is_logged') === 'true';
+      const overlay = document.getElementById('loginOverlay');
+      const content = document.getElementById('appContent');
+      
+      if (isLogged) {
+        if (overlay) overlay.style.display = 'none';
+        if (content) content.style.display = 'block';
+      } else {
+        if (overlay) overlay.style.display = 'flex';
+        if (content) content.style.display = 'none';
+      }
+    };
+
+    window.submitLogin = function(e) {
+      if (e) e.preventDefault();
+      const pinInput = document.getElementById('pinInput').value.trim();
+      const errorMsg = document.getElementById('loginError');
+
+      if (pinInput === SECRET_PIN) {
+        localStorage.setItem('jow_is_logged', 'true');
+        if (errorMsg) errorMsg.style.display = 'none';
+        document.getElementById('pinInput').value = '';
+        window.checkAuth();
+      } else {
+        if (errorMsg) errorMsg.style.display = 'block';
+        document.getElementById('pinInput').value = '';
+      }
+    };
+
+    window.handleLogout = function() {
+      localStorage.removeItem('jow_is_logged');
+      window.checkAuth();
+    };
+
+    // Otwarcie po załadowaniu
     window.addEventListener('DOMContentLoaded', () => {
-      checkAuthStatus();
+      window.checkAuth();
       initStars();
       initAuthorSelector();
       initCategorySelector();
 
-      document.getElementById('loginForm').addEventListener('submit', handleLogin);
-      document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-      document.getElementById('entryForm').addEventListener('submit', handleFormSubmit);
-      document.getElementById('authorFilter').addEventListener('change', renderEntries);
-      document.getElementById('categoryFilter').addEventListener('change', renderEntries);
-
-      // Nasłuchiwanie zmian w bazie danych
+      // Nasłuchiwanie bazy Firebase
       onValue(entriesRef, (snapshot) => {
         const data = snapshot.val();
         entries = [];
@@ -68,40 +96,9 @@
       });
     });
 
-    function checkAuthStatus() {
-      const isLogged = localStorage.getItem('jow_is_logged') === 'true';
-      if (isLogged) {
-        document.getElementById('loginOverlay').style.display = 'none';
-        document.getElementById('appContent').style.display = 'block';
-      } else {
-        document.getElementById('loginOverlay').style.display = 'flex';
-        document.getElementById('appContent').style.display = 'none';
-      }
-    }
-
-    function handleLogin(e) {
-      e.preventDefault();
-      const pinInput = document.getElementById('pinInput').value.trim();
-      const errorMsg = document.getElementById('loginError');
-
-      if (pinInput === SECRET_PIN) {
-        localStorage.setItem('jow_is_logged', 'true');
-        errorMsg.style.display = 'none';
-        document.getElementById('pinInput').value = '';
-        checkAuthStatus();
-      } else {
-        errorMsg.style.display = 'block';
-        document.getElementById('pinInput').value = '';
-      }
-    }
-
-    function handleLogout() {
-      localStorage.removeItem('jow_is_logged');
-      checkAuthStatus();
-    }
-
     function initStars() {
       const container = document.getElementById('starsContainer');
+      if (!container) return;
       container.innerHTML = '';
       for (let i = 1; i <= 10; i++) {
         const star = document.createElement('i');
@@ -113,7 +110,8 @@
 
     function setRating(val) {
       currentRating = val;
-      document.getElementById('ratingValue').innerText = `${val} / 10`;
+      const rVal = document.getElementById('ratingValue');
+      if (rVal) rVal.innerText = `${val} / 10`;
       initStars();
     }
 
@@ -146,21 +144,21 @@
       const lessonInput = document.getElementById('lessonInput');
 
       if (selectedCategory === 'Cytaty') {
-        mainInputLabel.innerText = "Cytat z dzisiejszego dnia";
-        quoteInput.placeholder = "Co ciekawego/śmiesznego dzisiaj padło?";
-        lessonInput.placeholder = "Czego się dzisiaj nauczyłeś lub co wyciągasz z tego dnia?";
+        if (mainInputLabel) mainInputLabel.innerText = "Cytat z dzisiejszego dnia";
+        if (quoteInput) quoteInput.placeholder = "Co ciekawego/śmiesznego dzisiaj padło?";
+        if (lessonInput) lessonInput.placeholder = "Czego się dzisiaj nauczyłeś lub co wyciągasz z tego dnia?";
       } else if (selectedCategory === 'Wspomnienia') {
-        mainInputLabel.innerText = "Tytuł / Nazwa wspomnienia";
-        quoteInput.placeholder = "Co wspominać będziemy na lata? (np. Epicki wyjazd)";
-        lessonInput.placeholder = "Opisz to wspomnienie ze szczegółami...";
+        if (mainInputLabel) mainInputLabel.innerText = "Tytuł / Nazwa wspomnienia";
+        if (quoteInput) quoteInput.placeholder = "Co wspominać będziemy na lata? (np. Epicki wyjazd)";
+        if (lessonInput) lessonInput.placeholder = "Opisz to wspomnienie ze szczegółami...";
       } else {
-        mainInputLabel.innerText = "Co się dziś wydarzyło?";
-        quoteInput.placeholder = "Podsumuj dzisiejszy dzień jednym zdaniem...";
-        lessonInput.placeholder = "Napisz co dokładnie dzisiaj robiłeś/robiła ekipa...";
+        if (mainInputLabel) mainInputLabel.innerText = "Co się dziś wydarzyło?";
+        if (quoteInput) quoteInput.placeholder = "Podsumuj dzisiejszy dzień jednym zdaniem...";
+        if (lessonInput) lessonInput.placeholder = "Napisz co dokładnie dzisiaj robiłeś/robiła ekipa...";
       }
     }
 
-    function handleFormSubmit(e) {
+    window.handleFormSubmit = function(e) {
       e.preventDefault();
       const quote = document.getElementById('quoteInput').value.trim();
       const lesson = document.getElementById('lessonInput').value.trim();
@@ -183,23 +181,21 @@
       document.getElementById('quoteInput').value = '';
       document.getElementById('lessonInput').value = '';
       setRating(7);
-    }
+    };
 
     window.deleteEntry = function(key) {
       if (confirm('Czy na pewno chcesz usunąć ten wpis?')) {
         const itemRef = ref(db, `entries/${key}`);
         remove(itemRef);
       }
-    }
+    };
 
     window.toggleReaction = function(key, emoji) {
       const entry = entries.find(e => e.firebaseKey === key);
       if (!entry) return;
 
       let reactions = entry.reactions || {};
-      if (!reactions[emoji]) {
-        reactions[emoji] = [];
-      }
+      if (!reactions[emoji]) reactions[emoji] = [];
 
       const userIndex = reactions[emoji].indexOf(selectedAuthor);
       if (userIndex > -1) {
@@ -210,7 +206,7 @@
 
       const itemRef = ref(db, `entries/${key}`);
       update(itemRef, { reactions: reactions });
-    }
+    };
 
     window.addComment = function(e, key) {
       e.preventDefault();
@@ -235,7 +231,7 @@
       const itemRef = ref(db, `entries/${key}`);
       update(itemRef, { comments: comments });
       input.value = '';
-    }
+    };
 
     window.deleteComment = function(entryKey, commentId) {
       const entry = entries.find(e => e.firebaseKey === entryKey);
@@ -246,12 +242,14 @@
         const itemRef = ref(db, `entries/${entryKey}`);
         update(itemRef, { comments: updatedComments });
       }
-    }
+    };
 
     function updateStreak() {
       const streakBadge = document.getElementById('streakBadge');
       const streakCount = document.getElementById('streakCount');
       const streakLabel = document.getElementById('streakLabel');
+
+      if (!streakBadge) return;
 
       if (entries.length === 0) {
         streakBadge.className = 'streak-badge inactive';
@@ -306,8 +304,8 @@
     }
 
     function renderEntries() {
-      const authorFilterVal = document.getElementById('authorFilter').value;
-      const categoryFilterVal = document.getElementById('categoryFilter').value;
+      const authorFilterVal = document.getElementById('authorFilter') ? document.getElementById('authorFilter').value : 'ALL';
+      const categoryFilterVal = document.getElementById('categoryFilter') ? document.getElementById('categoryFilter').value : 'ALL';
 
       let filtered = entries;
 
@@ -319,15 +317,21 @@
         filtered = filtered.filter(e => (e.category || 'Cytaty') === categoryFilterVal);
       }
 
-      document.getElementById('totalEntries').innerText = entries.length;
-      if (entries.length > 0) {
-        const sum = entries.reduce((acc, curr) => acc + curr.rating, 0);
-        document.getElementById('avgRating').innerText = (sum / entries.length).toFixed(1);
-      } else {
-        document.getElementById('avgRating').innerText = '0.0';
+      const totalE = document.getElementById('totalEntries');
+      const avgR = document.getElementById('avgRating');
+
+      if (totalE) totalE.innerText = entries.length;
+      if (avgR) {
+        if (entries.length > 0) {
+          const sum = entries.reduce((acc, curr) => acc + curr.rating, 0);
+          avgR.innerText = (sum / entries.length).toFixed(1);
+        } else {
+          avgR.innerText = '0.0';
+        }
       }
 
       const listContainer = document.getElementById('entriesList');
+      if (!listContainer) return;
       listContainer.innerHTML = '';
 
       if (filtered.length === 0) {
@@ -416,12 +420,12 @@
               <p>${item.lesson}</p>
             </div>
 
-            <!-- SEKCJA REAKCJI -->
+            <!-- REAKCJE -->
             <div class="reactions-bar">
               ${reactionsHTML}
             </div>
 
-            <!-- SEKCJA KOMENTARZY -->
+            <!-- KOMENTARZE -->
             <div class="comments-section">
               <div class="comments-title"><i class="fa-solid fa-comments"></i> Komentarze (${comments.length})</div>
               <div class="comments-list">
@@ -456,7 +460,7 @@
         <h2>Dziennik Jow</h2>
         <p>Wpisz kod PIN, aby uzyskać dostęp</p>
       </div>
-      <form id="loginForm">
+      <form id="loginForm" onsubmit="window.submitLogin(event)">
         <div class="form-group">
           <input type="password" id="pinInput" class="form-control pin-input" placeholder="Wpisz PIN..." maxlength="10" required>
         </div>
@@ -488,7 +492,7 @@
               <div class="streak-label" id="streakLabel">Brak aktywnej passy</div>
             </div>
           </div>
-          <button id="logoutBtn" class="logout-btn" title="Wyloguj"><i class="fa-solid fa-right-from-bracket"></i></button>
+          <button onclick="window.handleLogout()" class="logout-btn" title="Wyloguj"><i class="fa-solid fa-right-from-bracket"></i></button>
         </div>
       </div>
     </header>
@@ -497,7 +501,7 @@
       <section class="card form-card">
         <h2 class="section-title"><i class="fa-solid fa-pen-to-square"></i> Dodaj wpis z dzisiaj</h2>
         
-        <form id="entryForm">
+        <form id="entryForm" onsubmit="window.handleFormSubmit(event)">
           <div class="form-group">
             <label class="form-label">Kto dodaje wpis?</label>
             <div class="author-selector">
@@ -519,6 +523,4 @@
               <button type="button" class="category-btn active" data-category="Cytaty">
                 <i class="fa-solid fa-quote-left"></i> Cytaty
               </button>
-              <button type="button" class="category-btn" data-category="Wspomnienia">
-                <i class="fa-solid fa-camera-retro"></i> Wspomnienia
-     
+              <button ty
