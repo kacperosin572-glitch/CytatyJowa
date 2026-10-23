@@ -523,4 +523,73 @@
               <button type="button" class="category-btn active" data-category="Cytaty">
                 <i class="fa-solid fa-quote-left"></i> Cytaty
               </button>
-              <button ty
+              <button type="button" class="category-btn" data-category="Wspomnienia">
+                <i class="fa-solid fa-camera-retro"></i> Wspomnienia
+              </button>
+              <button type="button" class="category-btn" data-category="Co się dziś wydarzyło?">
+                <i class="fa-solid fa-calendar-day"></i> Co się wydarzyło?
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="quoteInput" id="mainInputLabel" class="form-label">Cytat z dzisiejszego dnia</label>
+            <input type="text" id="quoteInput" class="form-control" placeholder="Co ciekawego/śmiesznego dzisiaj padło?" required>
+          </div>
+
+          <div class="form-group">
+            <label for="lessonInput" class="form-label">Opis / Wnioski</label>
+            <textarea id="lessonInput" class="form-control" rows="3" placeholder="Czego się dzisiaj nauczyłeś lub co wyciągasz z tego dnia?" required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ocena dzisiejszego dnia (1 - 10)</label>
+            <div class="rating-box">
+              <div class="stars-container" id="starsContainer"></div>
+              <span class="rating-value" id="ratingValue">7 / 10</span>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn">
+            <i class="fa-solid fa-plus-circle"></i> Zapisz wpis i zalicz dzień
+          </button>
+        </form>
+      </section>
+
+      <section class="card history-card">
+        <div class="history-header">
+          <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Historia wpisów</h2>
+          <div class="filter-box">
+            <select id="authorFilter" class="filter-select">
+              <option value="ALL">Wszyscy autorzy</option>
+              <option value="Jasin">Tylko Jasin</option>
+              <option value="Osin">Tylko Osin</option>
+              <option value="Wrona">Tylko Wrona</option>
+            </select>
+            <select id="categoryFilter" class="filter-select">
+              <option value="ALL">Wszystkie kategorie</option>
+              <option value="Cytaty">Cytaty</option>
+              <option value="Wspomnienia">Wspomnienia</option>
+              <option value="Co się dziś wydarzyło?">Co się wydarzyło?</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="stats-bar">
+          <div class="stat-item">
+            <span class="stat-label">Razem wpisów</span>
+            <span class="stat-val" id="totalEntries">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Średnia ocena dni</span>
+            <span class="stat-val" id="avgRating">0.0</span>
+          </div>
+        </div>
+
+        <div id="entriesList" class="entries-list"></div>
+      </section>
+    </main>
+  </div>
+
+</body>
+</html>
