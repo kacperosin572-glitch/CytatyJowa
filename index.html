@@ -34,6 +34,7 @@
 
     let currentRating = 7;
     let selectedAuthor = 'Jasin';
+    let selectedCategory = 'Cytaty';
     let entries = [];
 
     // Sprawdzanie logowania po załadowaniu
@@ -41,11 +42,13 @@
       checkAuthStatus();
       initStars();
       initAuthorSelector();
+      initCategorySelector();
 
       document.getElementById('loginForm').addEventListener('submit', handleLogin);
       document.getElementById('logoutBtn').addEventListener('click', handleLogout);
       document.getElementById('entryForm').addEventListener('submit', handleFormSubmit);
       document.getElementById('authorFilter').addEventListener('change', renderEntries);
+      document.getElementById('categoryFilter').addEventListener('change', renderEntries);
 
       // Nasłuchiwanie zmian w bazie danych
       onValue(entriesRef, (snapshot) => {
@@ -125,6 +128,38 @@
       });
     }
 
+    function initCategorySelector() {
+      const btns = document.querySelectorAll('.category-btn');
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          btns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedCategory = btn.getAttribute('data-category');
+          updateFormPlaceholders();
+        });
+      });
+    }
+
+    function updateFormPlaceholders() {
+      const mainInputLabel = document.getElementById('mainInputLabel');
+      const quoteInput = document.getElementById('quoteInput');
+      const lessonInput = document.getElementById('lessonInput');
+
+      if (selectedCategory === 'Cytaty') {
+        mainInputLabel.innerText = "Cytat z dzisiejszego dnia";
+        quoteInput.placeholder = "Co ciekawego/śmiesznego dzisiaj padło?";
+        lessonInput.placeholder = "Czego się dzisiaj nauczyłeś lub co wyciągasz z tego dnia?";
+      } else if (selectedCategory === 'Wspomnienia') {
+        mainInputLabel.innerText = "Tytuł / Nazwa wspomnienia";
+        quoteInput.placeholder = "Co wspominać będziemy na lata? (np. Epicki wyjazd)";
+        lessonInput.placeholder = "Opisz to wspomnienie ze szczegółami...";
+      } else {
+        mainInputLabel.innerText = "Co się dziś wydarzyło?";
+        quoteInput.placeholder = "Podsumuj dzisiejszy dzień jednym zdaniem...";
+        lessonInput.placeholder = "Napisz co dokładnie dzisiaj robiłeś/robiła ekipa...";
+      }
+    }
+
     function handleFormSubmit(e) {
       e.preventDefault();
       const quote = document.getElementById('quoteInput').value.trim();
@@ -135,6 +170,7 @@
       const newEntry = {
         date: new Date().toISOString(),
         author: selectedAuthor,
+        category: selectedCategory,
         quote: quote,
         lesson: lesson,
         rating: currentRating,
@@ -156,7 +192,6 @@
       }
     }
 
-    // TOGGLE REAKCJI UNIKALNYCH DLA KAŻDEGO AUTORA
     window.toggleReaction = function(key, emoji) {
       const entry = entries.find(e => e.firebaseKey === key);
       if (!entry) return;
@@ -177,7 +212,6 @@
       update(itemRef, { reactions: reactions });
     }
 
-    // DODAWANIE KOMENTARZA
     window.addComment = function(e, key) {
       e.preventDefault();
       const input = document.getElementById(`commentInput-${key}`);
@@ -203,7 +237,6 @@
       input.value = '';
     }
 
-    // USUWANIE KOMENTARZA
     window.deleteComment = function(entryKey, commentId) {
       const entry = entries.find(e => e.firebaseKey === entryKey);
       if (!entry || !entry.comments) return;
@@ -273,8 +306,18 @@
     }
 
     function renderEntries() {
-      const filterValue = document.getElementById('authorFilter').value;
-      const filtered = filterValue === 'ALL' ? entries : entries.filter(e => e.author === filterValue);
+      const authorFilterVal = document.getElementById('authorFilter').value;
+      const categoryFilterVal = document.getElementById('categoryFilter').value;
+
+      let filtered = entries;
+
+      if (authorFilterVal !== 'ALL') {
+        filtered = filtered.filter(e => e.author === authorFilterVal);
+      }
+
+      if (categoryFilterVal !== 'ALL') {
+        filtered = filtered.filter(e => (e.category || 'Cytaty') === categoryFilterVal);
+      }
 
       document.getElementById('totalEntries').innerText = entries.length;
       if (entries.length > 0) {
@@ -291,7 +334,7 @@
         listContainer.innerHTML = `
           <div class="empty-state">
             <i class="fa-solid fa-box-open"></i>
-            <p>Brak wpisów w dzienniku.</p>
+            <p>Brak wpisów dla wybranych filtrów.</p>
           </div>
         `;
         return;
@@ -305,9 +348,14 @@
           year: 'numeric'
         });
 
+        const category = item.category || 'Cytaty';
         const reactions = item.reactions || {};
         const comments = item.comments || [];
         const availableEmojis = ['🔥', '😂', '💪', '❤️', '👍'];
+
+        let categoryIcon = 'fa-quote-left';
+        if (category === 'Wspomnienia') categoryIcon = 'fa-camera-retro';
+        if (category === 'Co się dziś wydarzyło?') categoryIcon = 'fa-calendar-day';
 
         let reactionsHTML = '';
         availableEmojis.forEach(emoji => {
@@ -346,6 +394,7 @@
           <div class="entry-header">
             <div class="entry-meta">
               <span class="badge author-${item.author.toLowerCase()}">${item.author}</span>
+              <span class="category-badge"><i class="fa-solid ${categoryIcon}"></i> ${category}</span>
               <span class="entry-date"><i class="fa-regular fa-calendar"></i> ${dateFormatted}</span>
             </div>
             <div class="entry-actions">
@@ -358,12 +407,12 @@
           
           <div class="entry-content">
             <div class="entry-quote">
-              <i class="fa-solid fa-quote-left quote-icon"></i>
+              <i class="fa-solid ${categoryIcon} quote-icon"></i>
               <span>"${item.quote}"</span>
             </div>
             
             <div class="entry-lesson">
-              <div class="lesson-title"><i class="fa-solid fa-lightbulb"></i> Nauka na przyszłość:</div>
+              <div class="lesson-title"><i class="fa-solid fa-align-left"></i> ${category === 'Cytaty' ? 'Nauka na przyszłość:' : 'Szczegóły / Opis:'}</div>
               <p>${item.lesson}</p>
             </div>
 
@@ -465,57 +514,11 @@
           </div>
 
           <div class="form-group">
-            <label for="quoteInput" class="form-label">Cytat z dzisiejszego dnia</label>
-            <input type="text" id="quoteInput" class="form-control" placeholder="Co ciekawe/śmiesznego dzisiaj padło?" required>
-          </div>
-
-          <div class="form-group">
-            <label for="lessonInput" class="form-label">Nauka / wniosek na przyszłość</label>
-            <textarea id="lessonInput" class="form-control" rows="3" placeholder="Czego się dzisiaj nauczyłeś lub co wyciągasz z tego dnia?" required></textarea>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Ocena dzisiejszego dnia (1 - 10)</label>
-            <div class="rating-box">
-              <div class="stars-container" id="starsContainer"></div>
-              <span class="rating-value" id="ratingValue">7 / 10</span>
-            </div>
-          </div>
-
-          <button type="submit" class="submit-btn">
-            <i class="fa-solid fa-plus-circle"></i> Zapisz wpis i zalicz dzień
-          </button>
-        </form>
-      </section>
-
-      <section class="card history-card">
-        <div class="history-header">
-          <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Historia wpisów</h2>
-          <div class="filter-box">
-            <select id="authorFilter" class="filter-select">
-              <option value="ALL">Wszyscy autorzy</option>
-              <option value="Jasin">Tylko Jasin</option>
-              <option value="Osin">Tylko Osin</option>
-              <option value="Wrona">Tylko Wrona</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="stats-bar">
-          <div class="stat-item">
-            <span class="stat-label">Razem wpisów</span>
-            <span class="stat-val" id="totalEntries">0</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Średnia ocena dni</span>
-            <span class="stat-val" id="avgRating">0.0</span>
-          </div>
-        </div>
-
-        <div id="entriesList" class="entries-list"></div>
-      </section>
-    </main>
-  </div>
-
-</body>
-</html>
+            <label class="form-label">Kategoria wpisu</label>
+            <div class="category-selector">
+              <button type="button" class="category-btn active" data-category="Cytaty">
+                <i class="fa-solid fa-quote-left"></i> Cytaty
+              </button>
+              <button type="button" class="category-btn" data-category="Wspomnienia">
+                <i class="fa-solid fa-camera-retro"></i> Wspomnienia
+     
